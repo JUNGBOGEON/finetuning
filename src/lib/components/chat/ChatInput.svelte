@@ -1,57 +1,146 @@
 <script lang="ts">
 	import SendIcon from '@lucide/svelte/icons/send';
 	import LoaderIcon from '@lucide/svelte/icons/loader';
-	import { Textarea } from '$lib/components/ui/textarea/index.js';
-	import { Button } from '$lib/components/ui/button/index.js';
+	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+	import gemmaIcon from '$lib/assets/gemma3.png';
+
+	interface ModelOption {
+		id: string;
+		name: string;
+		size: string;
+	}
+
+	const models: ModelOption[] = [
+		{ id: 'gemma3:4b', name: 'Gemma 3', size: '4B' },
+		{ id: 'gemma3:12b', name: 'Gemma 3', size: '12B' }
+	];
 
 	interface Props {
 		value?: string;
 		disabled?: boolean;
 		placeholder?: string;
-		footerText?: string;
+		centered?: boolean;
+		selectedModel?: string;
 		onsubmit?: () => void;
+		onmodelchange?: (model: string) => void;
 	}
 
 	let {
 		value = $bindable(''),
 		disabled = false,
 		placeholder = '메시지를 입력하세요...',
-		footerText = 'Running on localhost • gemma3:4b',
-		onsubmit
+		centered = false,
+		selectedModel = $bindable('gemma3:4b'),
+		onsubmit,
+		onmodelchange
 	}: Props = $props();
+
+	const currentModel = $derived(models.find(m => m.id === selectedModel) || models[0]);
+
+	let textareaEl: HTMLTextAreaElement;
+
+	function selectModel(modelId: string) {
+		selectedModel = modelId;
+		onmodelchange?.(modelId);
+	}
+
+	function trimExcessiveLineBreaks(text: string): string {
+		// Replace 3+ consecutive line breaks with 2
+		return text.replace(/\n{3,}/g, '\n\n').trim();
+	}
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Enter' && !e.shiftKey) {
 			e.preventDefault();
+			// Trim excessive line breaks before submit
+			value = trimExcessiveLineBreaks(value);
 			onsubmit?.();
 		}
 	}
+
+	function handleInput() {
+		if (!textareaEl) return;
+		// Reset height to auto to get the correct scrollHeight
+		textareaEl.style.height = 'auto';
+		// Set new height based on content, with max limit
+		const maxHeight = 200;
+		const newHeight = Math.min(textareaEl.scrollHeight, maxHeight);
+		textareaEl.style.height = `${newHeight}px`;
+	}
+
+	// Reset height when value is cleared
+	$effect(() => {
+		if (value === '' && textareaEl) {
+			textareaEl.style.height = 'auto';
+		}
+	});
 </script>
 
-<div class="p-4 border-t border-border bg-gradient-to-t from-background to-transparent">
-	<div class="max-w-3xl mx-auto">
-		<div class="flex gap-2 items-end rounded-lg border border-border bg-card p-2 shadow-sm">
-			<Textarea
+<!-- Notion-style input area -->
+<div class={centered ? '' : 'border-t border-[var(--notion-border)] bg-[var(--notion-bg-primary)]'}>
+	<div class={centered ? 'p-0' : 'max-w-3xl mx-auto p-4'}>
+		<div class="rounded-lg border border-[var(--notion-border)] bg-[var(--notion-bg-secondary)] overflow-hidden focus-within:border-[var(--notion-blue)] transition-colors">
+			<textarea
+				bind:this={textareaEl}
 				bind:value
 				onkeydown={handleKeydown}
+				oninput={handleInput}
 				{disabled}
 				{placeholder}
 				rows={1}
-				class="min-h-[40px] max-h-[200px] resize-none border-0 bg-transparent p-2 focus-visible:ring-0 focus-visible:ring-offset-0"
-			/>
-			<Button
-				size="icon"
-				onclick={onsubmit}
-				disabled={disabled || !value.trim()}
-				class="shrink-0"
-			>
-				{#if disabled}
-					<LoaderIcon class="size-4 animate-spin" />
-				{:else}
-					<SendIcon class="size-4" />
-				{/if}
-			</Button>
+				class="w-full min-h-[44px] max-h-[200px] resize-none border-0 bg-transparent px-3 py-3 text-sm text-[var(--notion-text-primary)] placeholder:text-[var(--notion-text-tertiary)] focus:outline-none overflow-y-auto"
+			></textarea>
+			<div class="flex items-center justify-between px-3 py-2 border-t border-[var(--notion-border)]">
+				<!-- Model Selector -->
+				<DropdownMenu.Root>
+					<DropdownMenu.Trigger>
+						{#snippet child({ props })}
+							<button
+								{...props}
+								type="button"
+								class="flex items-center gap-2 px-2 py-1 rounded hover:bg-[var(--notion-bg-hover)] text-[var(--notion-text-secondary)] transition-colors"
+							>
+								<img src={gemmaIcon} alt="Gemma" class="size-4 rounded" />
+								<span class="text-xs font-medium">{currentModel.name} ({currentModel.size})</span>
+								<ChevronDownIcon class="size-3" />
+							</button>
+						{/snippet}
+					</DropdownMenu.Trigger>
+					<DropdownMenu.Content align="start" class="w-48">
+						{#each models as model (model.id)}
+							<DropdownMenu.Item
+								onclick={() => selectModel(model.id)}
+								class="flex items-center gap-2"
+							>
+								<img src={gemmaIcon} alt="Gemma" class="size-4 rounded" />
+								<span>{model.name} ({model.size})</span>
+								{#if model.id === selectedModel}
+									<span class="ml-auto text-[var(--notion-blue)]">✓</span>
+								{/if}
+							</DropdownMenu.Item>
+						{/each}
+					</DropdownMenu.Content>
+				</DropdownMenu.Root>
+
+				<button
+					type="button"
+					onclick={onsubmit}
+					disabled={disabled || !value.trim()}
+					class="size-8 flex items-center justify-center rounded-md bg-[var(--notion-blue)] text-white hover:bg-[var(--notion-blue)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+				>
+					{#if disabled}
+						<LoaderIcon class="size-4 animate-spin" />
+					{:else}
+						<SendIcon class="size-4" />
+					{/if}
+				</button>
+			</div>
 		</div>
-		<p class="text-center text-xs text-muted-foreground mt-2">{footerText}</p>
+		{#if !centered}
+			<p class="text-center text-xs text-[var(--notion-text-tertiary)] mt-2">
+				Enter로 전송 • Shift+Enter로 줄바꿈
+			</p>
+		{/if}
 	</div>
 </div>

@@ -25,6 +25,9 @@ export function createChatStore() {
 		clear() {
 			messages = [];
 			isLoading = false;
+		},
+		clearMessages() {
+			messages = [];
 		}
 	};
 }

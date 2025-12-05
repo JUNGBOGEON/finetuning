@@ -7,14 +7,32 @@ export interface DiscordUser {
 	global_name: string | null;
 }
 
-export interface UserWithAvatar extends DiscordUser {
-	avatarUrl: string;
+export interface UserWithAvatar {
+	id: number;
+	discordId: string;
+	username: string;
+	global_name: string | null;
+	email: string | null;
+	avatarUrl: string | null;
 }
 
 // Chat types
 export interface ChatMessage {
+	id?: number;
 	role: 'user' | 'assistant' | 'system';
 	content: string;
+	model?: string;
+	createdAt?: Date;
+}
+
+export interface Conversation {
+	id: number;
+	userId: number;
+	title: string | null;
+	model: string | null;
+	isFavorite: boolean;
+	createdAt: Date;
+	updatedAt: Date;
 }
 
 // Menu types
