@@ -23,20 +23,13 @@
 	const chatStore = createChatStore();
 	const scrollStore = createScrollStore();
 
-	// Model options
-	const modelNames: Record<string, string> = {
-		'gemma3:4b': 'Gemma 3 (4B)',
-		'gemma3:12b': 'Gemma 3 (12B)'
-	};
-
 	// Local state
 	let inputValue = $state('');
 	let selectedModel = $state('gemma3:4b');
 	let currentConversationId = $state<number | null>(null);
 	let conversations = $state<Conversation[]>(data.conversations || []);
 	let chatContainer: HTMLElement;
-
-	const currentModelName = $derived(modelNames[selectedModel] || 'Gemma 3 (4B)');
+	let abortController: AbortController | null = null;
 	const currentConversation = $derived(conversations.find(c => c.id === currentConversationId));
 	const currentConversationTitle = $derived(currentConversation?.title || '새 대화');
 	const currentConversationIsFavorite = $derived(currentConversation?.isFavorite || false);
@@ -213,10 +206,12 @@
 		chatStore.addMessage({ role: 'assistant', content: '' });
 
 		let assistantContent = '';
+		abortController = new AbortController();
 
 		await sendChatMessage({
 			messages: chatStore.messages.slice(0, -1),
 			model: selectedModel,
+			signal: abortController.signal,
 			onChunk: (content) => {
 				assistantContent = content;
 				chatStore.updateLastMessage(content);
@@ -228,6 +223,7 @@
 					await saveMessage(currentConversationId, 'assistant', assistantContent, selectedModel);
 				}
 				chatStore.setLoading(false);
+				abortController = null;
 
 				// Refresh conversations list
 				const response = await fetch('/api/conversations');
@@ -240,8 +236,68 @@
 					content: 'Error: Failed to get response.'
 				});
 				chatStore.setLoading(false);
+				abortController = null;
 			}
 		});
+	}
+
+	async function stopGeneration() {
+		if (abortController) {
+			abortController.abort();
+			abortController = null;
+
+			// Save current content if any
+			const lastMessage = chatStore.messages[chatStore.messages.length - 1];
+			if (currentConversationId && lastMessage?.role === 'assistant' && lastMessage.content) {
+				await saveMessage(currentConversationId, 'assistant', lastMessage.content, selectedModel);
+			}
+
+			chatStore.setLoading(false);
+
+			// Refresh conversations list
+			const response = await fetch('/api/conversations');
+			conversations = await response.json();
+		}
+	}
+
+	async function editMessage(index: number, content: string) {
+		const message = chatStore.messages[index];
+		if (!message) return;
+
+		// Update local state immediately
+		chatStore.updateMessage(index, content);
+
+		// Update in database if message has an ID
+		if (message.id) {
+			try {
+				await fetch(`/api/messages/${message.id}`, {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ content })
+				});
+			} catch (error) {
+				console.error('Failed to update message:', error);
+			}
+		}
+	}
+
+	async function deleteMessage(index: number) {
+		const message = chatStore.messages[index];
+		if (!message) return;
+
+		// Delete from database if message has an ID
+		if (message.id) {
+			try {
+				await fetch(`/api/messages/${message.id}`, {
+					method: 'DELETE'
+				});
+			} catch (error) {
+				console.error('Failed to delete message:', error);
+			}
+		}
+
+		// Update local state
+		chatStore.deleteMessage(index);
 	}
 </script>
 
@@ -275,6 +331,7 @@
 							bind:selectedModel={selectedModel}
 							disabled={chatStore.isLoading}
 							onsubmit={sendMessage}
+							onstop={stopGeneration}
 							centered={true}
 						/>
 					</div>
@@ -288,8 +345,15 @@
 						onscroll={handleScroll}
 					>
 						<div class="py-4">
-							{#each chatStore.messages as message}
-								<MessageItem {message} user={data.user} modelName={currentModelName} />
+							{#each chatStore.messages as message, index}
+								<MessageItem
+									{message}
+									user={data.user}
+									model={selectedModel}
+									{index}
+									onedit={editMessage}
+									ondelete={deleteMessage}
+								/>
 							{/each}
 						</div>
 					</div>
@@ -305,6 +369,7 @@
 					bind:selectedModel={selectedModel}
 					disabled={chatStore.isLoading}
 					onsubmit={sendMessage}
+					onstop={stopGeneration}
 				/>
 			{/if}
 		</div>

@@ -28,6 +28,19 @@ export function createChatStore() {
 		},
 		clearMessages() {
 			messages = [];
+		},
+		updateMessage(index: number, content: string) {
+			if (index >= 0 && index < messages.length) {
+				messages[index].content = content;
+			}
+		},
+		deleteMessage(index: number) {
+			if (index >= 0 && index < messages.length) {
+				messages = messages.filter((_, i) => i !== index);
+			}
+		},
+		setMessages(newMessages: ChatMessage[]) {
+			messages = newMessages;
 		}
 	};
 }

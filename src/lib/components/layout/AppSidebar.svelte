@@ -103,18 +103,15 @@
 				<Sidebar.GroupContent>
 					<div class="space-y-1">
 						{#each favoriteConversations as conversation (conversation.id)}
-							<div class="group flex items-center gap-1 rounded-md transition-colors {currentConversationId === conversation.id ? 'bg-[var(--notion-bg-hover)]' : 'hover:bg-[var(--notion-bg-hover)]'}">
+							<div class="group flex items-center rounded-md transition-colors {currentConversationId === conversation.id ? 'bg-[var(--notion-bg-hover)]' : 'hover:bg-[var(--notion-bg-hover)]'}">
 								<button
 									onclick={() => onSelectConversation?.(conversation.id)}
-									class="flex flex-1 items-center gap-2 px-2 py-2 text-left text-sm {currentConversationId === conversation.id ? 'text-[var(--notion-text-primary)]' : 'text-[var(--notion-text-secondary)]'}"
+									class="flex flex-1 min-w-0 items-center gap-2 px-2 py-2 text-left text-sm {currentConversationId === conversation.id ? 'text-[var(--notion-text-primary)]' : 'text-[var(--notion-text-secondary)]'}"
 								>
 									<MessageSquareIcon class="size-4 shrink-0" />
-									<span class="flex-1 truncate">{conversation.title || '새 대화'}</span>
-									<span class="text-xs text-[var(--notion-text-tertiary)] shrink-0 group-hover:hidden">
-										{formatDate(conversation.updatedAt)}
-									</span>
+									<span class="truncate">{conversation.title || '새 대화'}</span>
 								</button>
-								<div class="hidden group-hover:flex items-center gap-1 pr-1">
+								<div class="flex items-center shrink-0 pr-1 opacity-0 group-hover:opacity-100 transition-opacity">
 									<button
 										onclick={(e) => { e.stopPropagation(); onToggleFavorite?.(conversation.id, false); }}
 										class="p-1 rounded hover:bg-[var(--notion-bg-tertiary)] text-yellow-500"
@@ -146,18 +143,15 @@
 				<Sidebar.GroupContent>
 					<div class="space-y-1">
 						{#each regularConversations as conversation (conversation.id)}
-							<div class="group flex items-center gap-1 rounded-md transition-colors {currentConversationId === conversation.id ? 'bg-[var(--notion-bg-hover)]' : 'hover:bg-[var(--notion-bg-hover)]'}">
+							<div class="group flex items-center rounded-md transition-colors {currentConversationId === conversation.id ? 'bg-[var(--notion-bg-hover)]' : 'hover:bg-[var(--notion-bg-hover)]'}">
 								<button
 									onclick={() => onSelectConversation?.(conversation.id)}
-									class="flex flex-1 items-center gap-2 px-2 py-2 text-left text-sm {currentConversationId === conversation.id ? 'text-[var(--notion-text-primary)]' : 'text-[var(--notion-text-secondary)]'}"
+									class="flex flex-1 min-w-0 items-center gap-2 px-2 py-2 text-left text-sm {currentConversationId === conversation.id ? 'text-[var(--notion-text-primary)]' : 'text-[var(--notion-text-secondary)]'}"
 								>
 									<MessageSquareIcon class="size-4 shrink-0" />
-									<span class="flex-1 truncate">{conversation.title || '새 대화'}</span>
-									<span class="text-xs text-[var(--notion-text-tertiary)] shrink-0 group-hover:hidden">
-										{formatDate(conversation.updatedAt)}
-									</span>
+									<span class="truncate">{conversation.title || '새 대화'}</span>
 								</button>
-								<div class="hidden group-hover:flex items-center gap-1 pr-1">
+								<div class="flex items-center shrink-0 pr-1 opacity-0 group-hover:opacity-100 transition-opacity">
 									<button
 										onclick={(e) => { e.stopPropagation(); onToggleFavorite?.(conversation.id, true); }}
 										class="p-1 rounded hover:bg-[var(--notion-bg-tertiary)] text-[var(--notion-text-tertiary)] hover:text-yellow-500"

@@ -1,19 +1,25 @@
 <script lang="ts">
 	import SendIcon from '@lucide/svelte/icons/send';
-	import LoaderIcon from '@lucide/svelte/icons/loader';
+	import SquareIcon from '@lucide/svelte/icons/square';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
 	import gemmaIcon from '$lib/assets/gemma3.png';
+	import llamaIcon from '$lib/assets/llama.jpg';
 
 	interface ModelOption {
 		id: string;
 		name: string;
 		size: string;
+		icon: string;
 	}
 
 	const models: ModelOption[] = [
-		{ id: 'gemma3:4b', name: 'Gemma 3', size: '4B' },
-		{ id: 'gemma3:12b', name: 'Gemma 3', size: '12B' }
+		{ id: 'gemma3:4b', name: 'Gemma 3', size: '4B', icon: gemmaIcon },
+		{ id: 'gemma3:12b', name: 'Gemma 3', size: '12B', icon: gemmaIcon },
+		{ id: 'gemma3ft:12b', name: 'Gemma 3 (FT)', size: '12B', icon: gemmaIcon },
+		{ id: 'llama3:8b', name: 'Llama 3', size: '8B', icon: llamaIcon },
+		{ id: 'solar-kor:latest', name: 'Llama 3 (FT)', size: '8B', icon: llamaIcon },
+		{ id: 'gemma3:12b', name: 'Gemma 3', size: '12B', icon: gemmaIcon }
 	];
 
 	interface Props {
@@ -23,6 +29,7 @@
 		centered?: boolean;
 		selectedModel?: string;
 		onsubmit?: () => void;
+		onstop?: () => void;
 		onmodelchange?: (model: string) => void;
 	}
 
@@ -33,6 +40,7 @@
 		centered = false,
 		selectedModel = $bindable('gemma3:4b'),
 		onsubmit,
+		onstop,
 		onmodelchange
 	}: Props = $props();
 
@@ -101,7 +109,7 @@
 								type="button"
 								class="flex items-center gap-2 px-2 py-1 rounded hover:bg-[var(--notion-bg-hover)] text-[var(--notion-text-secondary)] transition-colors"
 							>
-								<img src={gemmaIcon} alt="Gemma" class="size-4 rounded" />
+								<img src={currentModel.icon} alt={currentModel.name} class="size-4 rounded" />
 								<span class="text-xs font-medium">{currentModel.name} ({currentModel.size})</span>
 								<ChevronDownIcon class="size-3" />
 							</button>
@@ -113,7 +121,7 @@
 								onclick={() => selectModel(model.id)}
 								class="flex items-center gap-2"
 							>
-								<img src={gemmaIcon} alt="Gemma" class="size-4 rounded" />
+								<img src={model.icon} alt={model.name} class="size-4 rounded" />
 								<span>{model.name} ({model.size})</span>
 								{#if model.id === selectedModel}
 									<span class="ml-auto text-[var(--notion-blue)]">✓</span>
@@ -123,18 +131,24 @@
 					</DropdownMenu.Content>
 				</DropdownMenu.Root>
 
-				<button
-					type="button"
-					onclick={onsubmit}
-					disabled={disabled || !value.trim()}
-					class="size-8 flex items-center justify-center rounded-md bg-[var(--notion-blue)] text-white hover:bg-[var(--notion-blue)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-				>
-					{#if disabled}
-						<LoaderIcon class="size-4 animate-spin" />
-					{:else}
+				{#if disabled}
+					<button
+						type="button"
+						onclick={onstop}
+						class="size-8 flex items-center justify-center rounded-full bg-[var(--notion-text-primary)] transition-colors"
+					>
+						<SquareIcon class="size-3 fill-[var(--notion-bg-primary)] text-[var(--notion-bg-primary)]" />
+					</button>
+				{:else}
+					<button
+						type="button"
+						onclick={onsubmit}
+						disabled={!value.trim()}
+						class="size-8 flex items-center justify-center rounded-md bg-[var(--notion-blue)] text-white hover:bg-[var(--notion-blue)]/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+					>
 						<SendIcon class="size-4" />
-					{/if}
-				</button>
+					</button>
+				{/if}
 			</div>
 		</div>
 		{#if !centered}

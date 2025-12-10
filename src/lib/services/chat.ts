@@ -3,6 +3,7 @@ import type { ChatMessage } from '$lib/types';
 export interface SendMessageOptions {
 	messages: ChatMessage[];
 	model?: string;
+	signal?: AbortSignal;
 	onChunk?: (content: string) => void;
 	onComplete?: (fullContent: string) => void;
 	onError?: (error: Error) => void;
@@ -12,6 +13,7 @@ export async function sendChatMessage(options: SendMessageOptions): Promise<void
 	const {
 		messages,
 		model = 'gemma3:12b',
+		signal,
 		onChunk,
 		onComplete,
 		onError
@@ -21,7 +23,8 @@ export async function sendChatMessage(options: SendMessageOptions): Promise<void
 		const response = await fetch('/api/chat', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ messages, model })
+			body: JSON.stringify({ messages, model }),
+			signal
 		});
 
 		if (!response.ok) {
@@ -75,6 +78,10 @@ export async function sendChatMessage(options: SendMessageOptions): Promise<void
 			}
 		}
 	} catch (error) {
+		if (error instanceof Error && error.name === 'AbortError') {
+			// User stopped the generation - this is not an error
+			return;
+		}
 		onError?.(error instanceof Error ? error : new Error(String(error)));
 	}
 }
