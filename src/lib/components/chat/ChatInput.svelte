@@ -18,8 +18,8 @@
 		{ id: 'gemma3:12b', name: 'Gemma 3', size: '12B', icon: gemmaIcon },
 		{ id: 'gemma3ft:12b', name: 'Gemma 3 (FT)', size: '12B', icon: gemmaIcon },
 		{ id: 'llama3:8b', name: 'Llama 3', size: '8B', icon: llamaIcon },
-		{ id: 'solar-kor:latest', name: 'Llama 3 (FT)', size: '8B', icon: llamaIcon },
-		{ id: 'gemma3:12b', name: 'Gemma 3', size: '12B', icon: gemmaIcon }
+		{ id: 'blossom3b-q8:latest', name: 'Llama 3 (FT 1)', size: '12B', icon: llamaIcon },
+		{ id: 'llama3-ft2:12b', name: 'Llama 3 (FT 2)', size: '12B', icon: llamaIcon }
 	];
 
 	interface Props {

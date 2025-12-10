@@ -14,7 +14,8 @@
 		'gemma3:12b': { name: 'Gemma 3 (12B)', icon: gemmaIcon },
 		'gemma3ft:12b': { name: 'Gemma 3 (FT) (12B)', icon: gemmaIcon },
 		'llama3:8b': { name: 'Llama 3 (8B)', icon: llamaIcon },
-		'solar-kor:latest': { name: 'Llama 3 (FT) (8B)', icon: llamaIcon }
+		'blossom3b-q8:latest': { name: 'Llama 3 (FT 1) (12B)', icon: llamaIcon },
+		'llama3-ft2:12b': { name: 'Llama 3 (FT 2) (12B)', icon: llamaIcon }
 	};
 
 	interface Props {
@@ -30,12 +31,25 @@
 
 	let isEditing = $state(false);
 	let editContent = $state('');
+	let isShiftPressed = $state(false);
 
 	const isUser = $derived(message.role === 'user');
 	const isAssistant = $derived(message.role === 'assistant');
 	const isLoading = $derived(isAssistant && message.content === '');
 	const currentModelInfo = $derived(modelInfo[model] || modelInfo['gemma3:4b']);
 	const displayName = $derived(isUser ? (user.global_name || user.username) : currentModelInfo.name);
+
+	function handleKeyDown(e: KeyboardEvent) {
+		if (e.key === 'Shift') {
+			isShiftPressed = true;
+		}
+	}
+
+	function handleKeyUp(e: KeyboardEvent) {
+		if (e.key === 'Shift') {
+			isShiftPressed = false;
+		}
+	}
 
 	function startEdit() {
 		editContent = message.content;
@@ -58,6 +72,8 @@
 		ondelete?.(index);
 	}
 </script>
+
+<svelte:window onkeydown={handleKeyDown} onkeyup={handleKeyUp} />
 
 <!-- Notion-style message layout -->
 <div class="group py-3">
@@ -84,14 +100,16 @@
 					{new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
 				</span>
 
-				<!-- Edit/Delete buttons (shown on hover) -->
+				<!-- Edit/Delete buttons (shown when Shift is pressed) -->
 				{#if !isLoading && !isEditing}
-					<div class="opacity-0 group-hover:opacity-100 flex items-center gap-1 ml-auto transition-opacity">
+					<div
+						class="flex items-center gap-1 ml-auto transition-all duration-200 ease-out {isShiftPressed ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2 pointer-events-none'}"
+					>
 						<button
 							type="button"
 							onclick={startEdit}
 							class="p-1 rounded hover:bg-[var(--notion-bg-tertiary)] text-[var(--notion-text-tertiary)] hover:text-[var(--notion-text-primary)] transition-colors"
-							title="수정"
+							title="수정 (Shift + 클릭)"
 						>
 							<PencilIcon class="size-3.5" />
 						</button>
@@ -99,7 +117,7 @@
 							type="button"
 							onclick={handleDelete}
 							class="p-1 rounded hover:bg-[var(--notion-bg-tertiary)] text-[var(--notion-text-tertiary)] hover:text-red-500 transition-colors"
-							title="삭제"
+							title="삭제 (Shift + 클릭)"
 						>
 							<TrashIcon class="size-3.5" />
 						</button>
